@@ -3,6 +3,8 @@ package com.emekalites.react.alarm.notification;
 import android.app.AlarmManager;
 import android.app.Application;
 import android.app.NotificationManager;
+import androidx.core.app.NotificationManagerCompat;
+import android.app.NotificationChannel;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -18,7 +20,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.v4.app.NotificationCompat;
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
 import org.json.JSONException;
@@ -91,9 +93,32 @@ public class ANHelper {
     }
 
     /*
+    *  Create notification channel for SDK >= 26
+    */
+    public void shouldCreateNotificationChannel(Bundle bundle){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // set-up variables
+            String channelName = bundle.getString("channel");
+            CharSequence name = channelName;
+            String description = "description";
+            String id = channelName;
+            int importance = NotificationManager.IMPORTANCE_MAX;
+            NotificationChannel channel = new NotificationChannel(id, name, importance);
+            channel.setDescription(description);
+            // create channel
+            NotificationManager notificationManager = mContext.getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    /*
     *  Send notification after alarm rings and remove it from re-scheduling
     */
     public void sendNotification(Bundle bundle){
+
+        // notification channel (SDK >= 26)
+        shouldCreateNotificationChannel(bundle);
+
         try {
             Class intentClass = getMainActivityClass();
             if (intentClass == null) {
@@ -189,7 +214,7 @@ public class ANHelper {
                 }
             }
 
-            NotificationManager mNotificationManager = (NotificationManager) mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationManagerCompat mNotificationManager = NotificationManagerCompat.from(mContext);
             mBuilder.setContentIntent(resultPendingIntent);
 
             // tag
